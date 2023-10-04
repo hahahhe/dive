@@ -7,10 +7,13 @@
     <button type="button" onclick="startGame()">Start Game</button>
     <div id="score">점수: 0</div>
     <div id="countdown"></div>
-    <div><canvas id="canvas"></canvas></div>
-    <div id="label-container"></div>
+    <div class="game-container">
+        <canvas id="canvas"></canvas>
+        <div id="label-container"></div>
+    </div>
+    <div>Motions</div>
     <div id="motion-record"></div>
-    <div id="past-scores">records: </div>
+    <div id="past-scores"></div>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -41,6 +44,15 @@
 
         #canvas {
             border: 1px solid #ffffff;
+            width: 400px;  /* 웹캠 크기 조정 */
+            height: 400px; /* 웹캠 크기 조정 */
+        }
+
+        .game-container {
+            display: flex;
+            align-items: center;  /* 웹캠과 라벨을 세로 중앙 정렬 */
+            justify-content: center; /* 웹캠과 라벨을 가로 중앙 정렬 */
+            gap: 20px;  /* 웹캠과 라벨 사이의 간격 설정 */
         }
 
         #score, #countdown, #label-container, #motion-record, #past-scores {
@@ -189,13 +201,13 @@
     // 모션 선택 기록
     function recordMotions(systemMotion, userMotion) {
         const recordElement = document.createElement("div");
-        recordElement.textContent = `시스템: ${systemMotion}, 사용자: ${userMotion}`;
+        recordElement.textContent = `System: ${systemMotion}, User: ${userMotion}`;
         document.getElementById("motion-record").prepend(recordElement);  // 최근 항목을 위쪽에 추가
     }
 
     function displayPastScores() {
         const pastScoresElement = document.getElementById("past-scores");
-        pastScoresElement.innerHTML = "지난 점수들: " + pastScores.join(", ");
+        pastScoresElement.innerHTML = "Records: " + pastScores.join(", ");
     }
 
 
