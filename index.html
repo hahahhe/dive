@@ -44,15 +44,15 @@
 
         #canvas {
             border: 1px solid #ffffff;
-            width: 400px;  /* 웹캠 크기 조정 */
-            height: 400px; /* 웹캠 크기 조정 */
+            width: 400px;
+            height: 400px;
         }
 
         .game-container {
             display: flex;
-            align-items: center;  /* 웹캠과 라벨을 세로 중앙 정렬 */
-            justify-content: center; /* 웹캠과 라벨을 가로 중앙 정렬 */
-            gap: 20px;  /* 웹캠과 라벨 사이의 간격 설정 */
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
         }
 
         #score, #countdown, #label-container, #motion-record, #past-scores {
@@ -169,7 +169,7 @@
     }
 
     function gameOver() {
-        pastScores.push(currentScore);  // 점수를 지난 점수 배열에 추가
+        pastScores.push(currentScore);
         displayPastScores();
         alert("게임 오버! 점수는 " + currentScore + "점입니다.");
         currentScore = 0;
@@ -188,7 +188,7 @@
             return (prev.probability > curr.probability) ? prev : curr;
         });
 
-        recordMotions(currentSystemMotion, highestPrediction.className);  // 추가
+        recordMotions(currentSystemMotion, highestPrediction.className);
 
         if (highestPrediction.className === currentSystemMotion) {
             gameOver();
@@ -198,11 +198,10 @@
         }
     }
 
-    // 모션 선택 기록
     function recordMotions(systemMotion, userMotion) {
         const recordElement = document.createElement("div");
         recordElement.textContent = `System: ${systemMotion}, User: ${userMotion}`;
-        document.getElementById("motion-record").prepend(recordElement);  // 최근 항목을 위쪽에 추가
+        document.getElementById("motion-record").prepend(recordElement);
     }
 
     function displayPastScores() {
