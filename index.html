@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <div>div e div e div</div>
+    <button type="button" onclick="startGame()">Start Game</button>
+    <div id="score">점수: 0</div>
+    <div id="countdown"></div>
+    <div><canvas id="canvas"></canvas></div>
+    <div id="label-container"></div>
+    <div id="motion-record"></div>
+    <div id="past-scores">records: </div>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #282c34;
+            color: white;
+            text-align: center;
+            padding: 50px 0;
+        }
+
+        div {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            background-color: #e94560;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #d83048;
+        }
+
+        #canvas {
+            border: 1px solid #ffffff;
+        }
+
+        #score, #countdown, #label-container, #motion-record, #past-scores {
+            font-size: 20px;
+        }
+
+        #motion-record div, #past-scores {
+            margin-top: 10px;
+            font-size: 18px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+
+
+</head>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+<script type="text/javascript">
+    const URL = "https://teachablemachine.withgoogle.com/models/dK7_zm1LR/";
+    let model, webcam, ctx, labelContainer, maxPredictions;
+
+    const countdownSeconds = 3;
+    let countdownTimer;
+    let currentScore = 0;
+    const motions = ["묵", "찌", "빠"];
+    let currentSystemMotion;
+    let pastScores = [];
+
+    async function startGame() {
+        document.getElementById('motion-record').innerHTML = '';
+        startCountdown();
+    }
+
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+        model = await tmPose.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const size = 200;
+        const flip = true;
+        webcam = new tmPose.Webcam(size, size, flip);
+        await webcam.setup();
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        const canvas = document.getElementById("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        ctx = canvas.getContext("2d");
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) {
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+    
+    window.onload = init;
+
+    function startCountdown() {
+        let countdown = countdownSeconds;
+        document.getElementById('countdown').textContent = countdown + '...';
+        countdownTimer = setInterval(function() {
+            countdown--;
+            if (countdown <= 0) {
+                clearInterval(countdownTimer);
+                document.getElementById('countdown').textContent = "";
+                currentSystemMotion = motions[Math.floor(Math.random() * motions.length)];
+                checkMotion();
+            } else {
+                document.getElementById('countdown').textContent = countdown + '...';
+            }
+        }, 1000);
+    }
+
+    async function loop(timestamp) {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+        drawPose(pose);
+    }
+
+    function drawPose(pose) {
+        if (webcam.canvas) {
+            ctx.drawImage(webcam.canvas, 0, 0);
+            const minPartConfidence = 0.5;
+            tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+            tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+        }
+    }
+
+    async function checkMotion() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
+        const highestPrediction = prediction.reduce((prev, curr) => {
+            return (prev.probability > curr.probability) ? prev : curr;
+        });
+        if (highestPrediction.className === currentSystemMotion) {
+            gameOver();
+        } else {
+            updateScore();
+            startCountdown();
+        }
+    }
+
+    function gameOver() {
+        pastScores.push(currentScore);  // 점수를 지난 점수 배열에 추가
+        displayPastScores();
+        alert("게임 오버! 점수는 " + currentScore + "점입니다.");
+        currentScore = 0;
+        document.getElementById('score').textContent = "점수: 0";;
+    }
+
+    function updateScore() {
+        currentScore++;
+        document.getElementById('score').textContent = "점수: " + currentScore;
+    }
+    
+    async function checkMotion() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
+        const highestPrediction = prediction.reduce((prev, curr) => {
+            return (prev.probability > curr.probability) ? prev : curr;
+        });
+
+        recordMotions(currentSystemMotion, highestPrediction.className);  // 추가
+
+        if (highestPrediction.className === currentSystemMotion) {
+            gameOver();
+        } else {
+            updateScore();
+            startCountdown();
+        }
+    }
+
+    // 모션 선택 기록
+    function recordMotions(systemMotion, userMotion) {
+        const recordElement = document.createElement("div");
+        recordElement.textContent = `시스템: ${systemMotion}, 사용자: ${userMotion}`;
+        document.getElementById("motion-record").prepend(recordElement);  // 최근 항목을 위쪽에 추가
+    }
+
+    function displayPastScores() {
+        const pastScoresElement = document.getElementById("past-scores");
+        pastScoresElement.innerHTML = "지난 점수들: " + pastScores.join(", ");
+    }
+
+
+</script>
