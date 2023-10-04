@@ -83,11 +83,13 @@
     let currentSystemMotion;
     let pastScores = [];
 
+    // 게임 시작
     async function startGame() {
         document.getElementById('motion-record').innerHTML = '';
         startCountdown();
     }
 
+    // initialize
     async function init() {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
@@ -113,6 +115,7 @@
     
     window.onload = init;
 
+    // 카운트
     function startCountdown() {
         let countdown = countdownSeconds;
         document.getElementById('countdown').textContent = countdown + '...';
@@ -129,12 +132,14 @@
         }, 1000);
     }
 
+    // 루프
     async function loop(timestamp) {
         webcam.update();
         await predict();
         window.requestAnimationFrame(loop);
     }
 
+    // 예측값
     async function predict() {
         const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
         const prediction = await model.predict(posenetOutput);
@@ -145,6 +150,7 @@
         drawPose(pose);
     }
 
+    // 모션 윤곽 표시
     function drawPose(pose) {
         if (webcam.canvas) {
             ctx.drawImage(webcam.canvas, 0, 0);
@@ -154,20 +160,7 @@
         }
     }
 
-    async function checkMotion() {
-        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-        const prediction = await model.predict(posenetOutput);
-        const highestPrediction = prediction.reduce((prev, curr) => {
-            return (prev.probability > curr.probability) ? prev : curr;
-        });
-        if (highestPrediction.className === currentSystemMotion) {
-            gameOver();
-        } else {
-            updateScore();
-            startCountdown();
-        }
-    }
-
+    // 게임오버
     function gameOver() {
         pastScores.push(currentScore);
         displayPastScores();
@@ -176,11 +169,13 @@
         document.getElementById('score').textContent = "점수: 0";;
     }
 
+    // 점수 갱신
     function updateScore() {
         currentScore++;
         document.getElementById('score').textContent = "점수: " + currentScore;
     }
     
+    // 모션 일치 확인
     async function checkMotion() {
         const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
         const prediction = await model.predict(posenetOutput);
@@ -197,13 +192,15 @@
             startCountdown();
         }
     }
-
+    
+    // 지난 기록 표시
     function recordMotions(systemMotion, userMotion) {
         const recordElement = document.createElement("div");
         recordElement.textContent = `System: ${systemMotion}, User: ${userMotion}`;
         document.getElementById("motion-record").prepend(recordElement);
     }
-
+    
+    // 지난 게임 점수 표시
     function displayPastScores() {
         const pastScoresElement = document.getElementById("past-scores");
         pastScoresElement.innerHTML = "Records: " + pastScores.join(", ");
